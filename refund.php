@@ -117,9 +117,9 @@ function refund_civicrm_postProcess($formName, &$form) {
     if (($form->_action & CRM_Core_Action::REVERT) && $pendingRefundStatus == $form->_values['contribution_status_id']) {
       $ft = CRM_Core_BAO_FinancialTrxn::getFinancialTrxnId($form->_id, 'DESC', FALSE, " AND cft.status_id = {$pendingRefundStatus}");
       if ($ft['amount'] < $form->_values['total_amount']) {
-        CRM_Core_DAO::setFieldValue('CRM_Contribute_BAO_Contribution', $form->_id, 'contribution_status_id', $partialRefundStatus);
+        CRM_Core_DAO::setFieldValue('CRM_Contribute_DAO_Contribution', $form->_id, 'contribution_status_id', $partialRefundStatus);
         $amount = $form->_values['total_amount'] - $ft['amount'];
-        CRM_Core_DAO::setFieldValue('CRM_Contribute_BAO_Contribution', $form->_id, 'total_amount', $amount);
+        CRM_Core_DAO::setFieldValue('CRM_Contribute_DAO_Contribution', $form->_id, 'total_amount', $amount);
       }
     }
   }
