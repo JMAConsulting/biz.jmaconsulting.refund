@@ -960,8 +960,8 @@ LEFT JOIN  civicrm_line_item i ON ( i.contribution_id = c.id AND i.entity_table 
    *
    * @param int $id
    *
-   * @return mixed|null
-   *   $results no of deleted Contribution on success, false otherwise
+   * @return object
+   *   $trxn The refunded/pending refunded transaction.
    */
   public static function refundContribution($id, $params, $trxnID = NULL, $contribution) {
     if ($trxnID) {
@@ -1032,13 +1032,13 @@ LEFT JOIN  civicrm_line_item i ON ( i.contribution_id = c.id AND i.entity_table 
         'amount' => $trxn->total_amount,
       );
       civicrm_api3('EntityFinancialTrxn', 'create', $entityParams);
-      CRM_Core_DAO::setFieldValue('CRM_Contribute_BAO_Contribution', $id, 'contribution_status_id', CRM_Core_OptionGroup::getValue('contribution_status', 'Refunded', 'name'));
+      CRM_Core_DAO::setFieldValue('CRM_Contribute_DAO_Contribution', $id, 'contribution_status_id', CRM_Core_OptionGroup::getValue('contribution_status', 'Refunded', 'name'));
     }
     elseif ($trxn && !$trxnID) {
       if (CRM_Utils_Array::value('cancel_reason', $params)) {
-        CRM_Core_DAO::setFieldValue('CRM_Contribute_BAO_Contribution', $id, 'cancel_reason', $params['cancel_reason']);
+        CRM_Core_DAO::setFieldValue('CRM_Contribute_DAO_Contribution', $id, 'cancel_reason', $params['cancel_reason']);
       }
-      CRM_Core_DAO::setFieldValue('CRM_Contribute_BAO_Contribution', $id, 'contribution_status_id', CRM_Core_OptionGroup::getValue('contribution_status', 'Pending refund', 'name'));
+      CRM_Core_DAO::setFieldValue('CRM_Contribute_DAO_Contribution', $id, 'contribution_status_id', CRM_Core_OptionGroup::getValue('contribution_status', 'Pending refund', 'name'));
     }
     return $trxn;
   }
@@ -1973,7 +1973,6 @@ LEFT JOIN  civicrm_contribution contribution ON ( componentPayment.contribution_
 
             $membership->copyValues($formattedParams);
             $membership->save();
-
             //updating the membership log
             $membershipLog = array();
             $membershipLog = $formattedParams;
@@ -3831,7 +3830,8 @@ INNER JOIN civicrm_activity ON civicrm_activity_contact.activity_id = civicrm_ac
    *
    * @return null|object
    */
-  public static function recordAdditionalPayment($contributionId, $trxnsData, $paymentType = 'owed', $participantId = NULL, $updateStatus = TRUE) {
+  public static function recordAdditionalPayment($contributionId, $trxnsData, $paymentType = 'owed', $participantId = NULL, $updateStatus = TRUE,
+    $accounts = array('from' => NULL, 'to' => NULL), $isNegative = TRUE) {
     $statusId = CRM_Core_OptionGroup::getValue('contribution_status', 'Completed', 'name');
     $getInfoOf['id'] = $contributionId;
     $defaults = array();
