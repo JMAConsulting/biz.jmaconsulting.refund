@@ -26,3 +26,5 @@ INSERT INTO
 VALUES
    (@option_group_id_contrib_status, 'Partially refunded', @option_group_id_contrib_status_val+1, 'Partially refunded', NULL, 0, NULL, @option_group_id_contrib_status_wt+1, NULL, 0, 1, 1, NULL, NULL);
 
+ALTER TABLE `civicrm_financial_trxn` ADD `credit_card_number` INT(10) UNSIGNED NULL DEFAULT NULL COMMENT 'Last 4 digits of credit card.' AFTER check_number;
+ALTER TABLE `civicrm_financial_trxn` ADD `credit_card_type` INT( 10 ) UNSIGNED NULL DEFAULT NULL COMMENT 'FK to accept_creditcard option group values';
