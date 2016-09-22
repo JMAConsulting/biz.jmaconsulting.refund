@@ -135,6 +135,9 @@ class CRM_Contribute_BAO_Contribution extends CRM_Contribute_DAO_Contribution {
     }
 
     $contributionStatus = CRM_Contribute_PseudoConstant::contributionStatus(NULL, 'name');
+    if ($contributionID && $contributionStatus[$params['contribution_status_id']] == 'Pending refund') {
+      self::checkAccountsPayable($contributionID);
+    }
     //if contribution is created with cancelled or refunded status, add credit note id
     if (!empty($params['contribution_status_id'])) {
       // @todo - should we include Chargeback? If so use self::isContributionStatusNegative($params['contribution_status_id'])
@@ -3514,6 +3517,12 @@ INNER JOIN civicrm_activity ON civicrm_activity_contact.activity_id = civicrm_ac
     ) {
       return;
     }
+    if (($previousContributionStatus == 'Completed'
+      && $params['contribution']->contribution_status_id == array_search('Pending refund', $contributionStatus))
+      && $context == 'changedStatus'
+    ) {
+      return;
+    }
     if ($context == 'changedAmount' || $context == 'changeFinancialType') {
       $itemAmount = $params['trxnParams']['total_amount'] = $params['trxnParams']['net_amount'] = $params['total_amount'] - $params['prevContribution']->total_amount;
     }
@@ -5375,6 +5384,29 @@ LEFT JOIN  civicrm_contribution on (civicrm_contribution.contact_id = civicrm_co
     else {
       parent::assignTestValues($fieldName, $fieldDef, $counter);
     }
+  }
+
+  /**
+   * Check if contribution has financial type with Accounts Payable relationship.
+   *
+   * @param int $contributionId
+   *   Contribution ID
+   *
+   * @return bool
+   */
+  public static function checkAccountsPayable($contributionId, $formValidate = FALSE) {
+    $isError = FALSE;
+    $financialType = CRM_Core_DAO::getFieldValue('CRM_Contribute_DAO_Contribution', $contributionId, 'financial_type_id', 'id');
+    $relationTypeId = key(CRM_Core_PseudoConstant::accountOptionValues('account_relationship', NULL, " AND v.name LIKE 'Accounts Payable Account is' "));
+    $financialAccount = CRM_Contribute_PseudoConstant::financialAccountType($financialType, $relationTypeId);
+    if (!$financialAccount) {
+      $isError = TRUE;
+    }
+    if ($isError && !$formValidate) {
+      $error = ts('No Accounts Payable account has been configured for a financial type used in this contribution. Please add it at Administer > CiviContribute > Financial Types, Accounts link. Or change the financial type to one that has this relation defined.');
+      throw new CRM_Core_Exception($error);
+    }
+    return $isError;
   }
 
 }

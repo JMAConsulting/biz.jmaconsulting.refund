@@ -109,6 +109,24 @@ function refund_civicrm_alterSettingsFolders(&$metaDataFolders = NULL) {
   _refund_civix_civicrm_alterSettingsFolders($metaDataFolders);
 }
 
+/**
+ * Implements hook_civicrm_validateForm().
+ *
+ * @param string $formName
+ * @param array $fields
+ * @param array $files
+ * @param CRM_Core_Form $form
+ * @param array $errors
+ */
+function refund_civicrm_validateForm($formName, &$fields, &$files, &$form, &$errors) {
+  if ($formName == 'CRM_Contribute_Form_Contribution' && CRM_Utils_Array::value('_qf_Contribution_upload_revert', $fields)) {
+    if (CRM_Contribute_BAO_Contribution::checkAccountsPayable($form->_id, TRUE)) {
+      $errors['refund_amount'] = ts('No Accounts Payable account has been configured for a financial type used in this contribution. Please add it at Administer > CiviContribute > Financial Types, Accounts link. Or change the financial type to one that has this relation defined.');
+    }
+    return $errors;
+  }
+}
+
 function refund_civicrm_postProcess($formName, &$form) {
   if ($formName == 'CRM_Contribute_Form_Contribution') {
     $contributionStatuses = CRM_Contribute_PseudoConstant::contributionStatus(NULL, 'name');
