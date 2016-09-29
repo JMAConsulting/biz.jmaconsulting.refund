@@ -455,21 +455,29 @@ class CRM_Refund_Form_Report_CreditCard extends CRM_Report_Form {
       return "( {$fieldName} {$sqlOP} )";
     }
 
-    if ($fieldName == $this->_aliases['civicrm_contribution'] . '.closing_time') {
+    if ($fieldName == 'receive_date') {
       list($from, $to) = $this->getFromToFiscal($relative, $from, $to, $fromTime, $toTime);
+      
+      if ($from) {
+        $clauses[] = "( DATE_FORMAT({$fieldName}, '%Y%m%d%H%i%s') >= $from )";
+      }
+      
+      if ($to) {
+        $clauses[] = "( DATE_FORMAT({$fieldName}, '%Y%m%d%H%i%s') <= {$to} )";
+      }
     }
     else {
       list($from, $to) = $this->getFromTo($relative, $from, $to, $fromTime, $toTime);
-    }
-
-    if ($from) {
-      $from = ($type == CRM_Utils_Type::T_DATE) ? substr($from, 0, 8) : $from;
-      $clauses[] = "( {$fieldName} >= $from )";
-    }
-
-    if ($to) {
-      $to = ($type == CRM_Utils_Type::T_DATE) ? substr($to, 0, 8) : $to;
-      $clauses[] = "( {$fieldName} <= {$to} )";
+      
+      if ($from) {
+        $from = ($type == CRM_Utils_Type::T_DATE) ? substr($from, 0, 8) : $from;
+        $clauses[] = "( {$fieldName} >= $from )";
+      }
+      
+      if ($to) {
+        $to = ($type == CRM_Utils_Type::T_DATE) ? substr($to, 0, 8) : $to;
+        $clauses[] = "( {$fieldName} <= {$to} )";
+      }
     }
 
     if (!empty($clauses)) {
@@ -505,7 +513,6 @@ class CRM_Refund_Form_Report_CreditCard extends CRM_Report_Form {
       //Take only Date Part, Sometime Time part is also present in 'to'
       $to = substr($dateRange['to'], 0, 8);
     }
-    $from = date('Ymd', strtotime($from .' -1 day'));
     $from = CRM_Utils_Date::processDate($from, $fromTime);
     $to = CRM_Utils_Date::processDate($to, $toTime);
     return array($from, $to);
