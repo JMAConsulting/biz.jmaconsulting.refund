@@ -1025,7 +1025,9 @@ LEFT JOIN  civicrm_line_item i ON ( i.contribution_id = c.id AND i.entity_table 
         'to' => $toFinancialAccount,
       );
     }
-    $trxn = self::recordAdditionalPayment($id, $trxnsData, 'refund', NULL, FALSE, $accounts, FALSE);
+    if (CRM_Core_DAO::getFieldValue('CRM_Contribute_DAO_Contribution', $id, 'contribution_status_id') != CRM_Core_OptionGroup::getValue('contribution_status', 'Refunded', 'name')) {
+      $trxn = self::recordAdditionalPayment($id, $trxnsData, 'refund', NULL, FALSE, $accounts, FALSE);
+    }
     if ($trxn && $trxnID) {
       // Add entry in entity financial trxn table.
       $entityParams = array(
