@@ -722,7 +722,7 @@ WHERE pp.participant_id = {$entityId} AND ft.to_financial_account_id != {$toFina
         INNER JOIN civicrm_entity_financial_trxn ceft ON ceft.financial_trxn_id = cft.id
       WHERE ceft.entity_table = 'civicrm_contribution'
         AND ceft.entity_id = {$contributionID}
-        AND cft.is_payment = 1 AND from_financial_account_id IS NULL ORDER BY cft.id DESC LIMIT 1";
+        AND cft.is_payment = 1 ORDER BY cft.id DESC LIMIT 1";
     $dao = CRM_Core_DAO::executeQuery($sql);
     $dao->fetch();
     $creditCardDetails = array(
