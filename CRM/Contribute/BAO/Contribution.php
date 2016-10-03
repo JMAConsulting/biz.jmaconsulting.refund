@@ -4166,20 +4166,18 @@ WHERE eft.financial_trxn_id IN ({$trxnId}, {$baseTrxnId['financialTrxnId']})
     if ($getTrxnInfo && $baseTrxnId) {
       // Need to exclude fee trxn rows so filter out rows where TO FINANCIAL ACCOUNT is expense account
       $sql = "
-        SELECT GROUP_CONCAT(fa.`name`) as financial_account,
+        SELECT IF(ft.from_financial_account_id IS NOT NULL AND fi.financial_account_id IS NULL, fa2.name, GROUP_CONCAT(fa1.`name`)) as financial_account,
           ft.total_amount,
           ft.payment_instrument_id,
           ft.trxn_date, ft.trxn_id, ft.status_id, ft.check_number, con.currency, con.id as contribution_id, con.contact_id, ft.id as ft_trxn_id, peft.entity_id
 
         FROM civicrm_contribution con
-          LEFT JOIN civicrm_entity_financial_trxn eft ON (eft.entity_id = con.id AND eft.entity_table = 'civicrm_contribution')
+          INNER JOIN civicrm_entity_financial_trxn eft ON (eft.entity_id = con.id AND eft.entity_table = 'civicrm_contribution')
           INNER JOIN civicrm_financial_trxn ft ON ft.id = eft.financial_trxn_id
-          INNER JOIN civicrm_entity_financial_trxn ef ON (ef.financial_trxn_id = ft.id AND ef.entity_table = 'civicrm_financial_item')
+          LEFT JOIN civicrm_entity_financial_trxn ef ON (ef.financial_trxn_id = ft.id AND ef.entity_table = 'civicrm_financial_item')
           LEFT JOIN civicrm_financial_item fi ON fi.id = ef.entity_id
-          INNER JOIN civicrm_financial_account fa ON fa.id = fi.financial_account_id
-
-          LEFT JOIN civicrm_entity_financial_trxn peft ON (peft.entity_id = ft.id AND peft.entity_table = 'civicrm_financial_trxn')
-          LEFT JOIN civicrm_financial_trxn pft ON pft.id = peft.financial_trxn_id
+          LEFT JOIN civicrm_financial_account fa1 ON fa1.id = fi.financial_account_id
+          LEFT JOIN civicrm_financial_account fa2 ON fa2.id = ft.from_financial_account_id AND ft.from_financial_account_id IS NOT NULL
 
         WHERE con.id = %1 AND (ft.is_payment = 1 OR ft.status_id = {$pendingRefundStatus})
         GROUP BY ft.id";
