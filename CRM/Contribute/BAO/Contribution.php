@@ -5401,7 +5401,7 @@ LEFT JOIN  civicrm_contribution on (civicrm_contribution.contact_id = civicrm_co
    */
   public static function checkAccountsPayable($contributionId, $formValidate = FALSE) {
     $isError = FALSE;
-    $financialType = CRM_Core_DAO::getFieldValue('CRM_Contribute_DAO_Contribution', $contributionId, 'financial_type_id', 'id');
+    $financialType = CRM_Core_DAO::getFieldValue('CRM_Contribute_DAO_Contribution', $contributionId, 'financial_type_id', 'id', TRUE);
     $relationTypeId = key(CRM_Core_PseudoConstant::accountOptionValues('account_relationship', NULL, " AND v.name LIKE 'Accounts Payable Account is' "));
     $financialAccount = CRM_Contribute_PseudoConstant::financialAccountType($financialType, $relationTypeId);
     if (!$financialAccount) {
