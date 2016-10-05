@@ -4004,10 +4004,10 @@ WHERE eft.financial_trxn_id IN ({$trxnId}, {$baseTrxnId['financialTrxnId']})
               'contact_id' => $contributionDAO->contact_id,
               'amount' => round($paid, 2),
               'currency' => $contributionDAO->currency,
-              'description' => $lineItemValue['label'],
+              'description' => ($lineItemValue['qty'] != 1 ? $lineItemValue['qty'] . ' of ' : '') . $lineItemValue['label'],
               'status_id' => array_search('Paid', $financialItemStatus),
               'entity_id' => $lineItemId,
-              'financial_account_id' => empty($toFinancialAccountId) ? CRM_Utils_Array::value('financial_account_id', $result) : $toFinancialAccountId,
+              'financial_account_id' => !empty($result['financial_account_id']) ? $result['financial_account_id'] : $toFinancialAccountId,
               'entity_table' => 'civicrm_line_item',
             );
             if (isset($refundStatus)) {
