@@ -530,7 +530,7 @@ class CRM_Batch_BAO_Batch extends CRM_Batch_DAO_Batch {
     $refundedStatus = array_search('Refunded', $contributionStatus);
     $totals = array_fill_keys($batchIds, array('item_count' => 0, 'total' => 0));
     if ($batchIds) {
-      $sql = "SELECT eb.batch_id, COUNT(tx.id) AS item_count, SUM(IF(tx.status_id = {$refundedStatus}, -tx.total_amount, tx.total_amount)) AS total
+      $sql = "SELECT eb.batch_id, COUNT(tx.id) AS item_count, SUM(IF(tx.status_id = {$refundedStatus} AND tx.from_financial_account_id IS NOT NULL, -tx.total_amount, tx.total_amount)) AS total
       FROM civicrm_entity_batch eb
       INNER JOIN civicrm_financial_trxn tx ON tx.id = eb.entity_id AND eb.entity_table = 'civicrm_financial_trxn'
       WHERE eb.batch_id IN (" . implode(',', $batchIds) . ")
