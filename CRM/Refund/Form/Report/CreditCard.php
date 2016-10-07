@@ -233,6 +233,7 @@ class CRM_Refund_Form_Report_CreditCard extends CRM_Report_Form {
             'title' => ts('Closing Time'),
             'type' => CRM_Utils_Type::T_DATE,
             'dbAlias' => 'receive_date',
+            'default' => array('from' => date('m/d/Y')),
           ),
           'contribution_source' => array(
             'title' => ts('Source'),
@@ -283,6 +284,12 @@ class CRM_Refund_Form_Report_CreditCard extends CRM_Report_Form {
           'receive_date' => array(
             'title' => ts('Date Received'),
             'dbAlias' => 'DATE(receive_date)',
+            'default' => TRUE,
+          ),
+          'closing_time' => array(
+            'title' => ts('Closing Time'),
+            'dbAlias' => 'HOUR(receive_date), MINUTE(receive_date)',
+            'default' => TRUE,
           ),
         ),
         'grouping' => 'contri-fields',
@@ -420,11 +427,16 @@ class CRM_Refund_Form_Report_CreditCard extends CRM_Report_Form {
   }
 
   public function where() {
-    if (empty($this->_params['closing_time_from']) && empty($this->_params['closing_time_to'])) {
-      $this->_params['closing_time_from'] = date('m/d/Y', strtotime('-1 day'));
-      $this->_params['closing_time_from_time'] = '3:59PM';
-      $this->_params['closing_time_to'] = date('m/d/Y');
-      $this->_params['closing_time_to_time'] = '4:00PM';
+    $this->_params['closing_time_to'] = date('m/d/Y');
+    $this->_params['closing_time_from'] = date('m/d/Y', strtotime('-1 day'));
+    if (empty($this->_params['closing_time_from_time'])) {
+      $this->_params['closing_time_from_time'] = '4:00:01PM';
+      $this->_params['closing_time_to_time'] = '4:00:00PM';
+    }
+    else {
+      $closingDate = strtotime($this->_params['closing_time_from_time']);
+      $this->_params['closing_time_to_time'] = date('h:i:sa', $closingDate);
+      $this->_params['closing_time_from_time'] = date('h:i:sa', $closingDate + 01);
     }
     parent::where();
     $paymentInstruments = CRM_Contribute_PseudoConstant::paymentInstrument();
