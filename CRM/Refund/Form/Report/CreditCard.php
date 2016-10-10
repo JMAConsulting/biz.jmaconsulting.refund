@@ -230,7 +230,7 @@ class CRM_Refund_Form_Report_CreditCard extends CRM_Report_Form {
           ),
           'closing_time' => array(
             'operatorType' => CRM_Report_Form::OP_DATETIME,
-            'title' => ts('Closing Time'),
+            'title' => ts(''),
             'type' => CRM_Utils_Type::T_DATE,
             'dbAlias' => 'receive_date',
             'default' => array('from' => date('m/d/Y')),

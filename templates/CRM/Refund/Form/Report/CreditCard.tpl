@@ -29,11 +29,10 @@
 <script type="text/javascript">
 
 CRM.$(function($) {
-  $("<td class='report-contents'></td>").insertBefore($('tr.crm-report-criteria-filter #s2id_closing_time_relative').parent());
   $('tr.crm-report-criteria-filter #s2id_closing_time_relative').hide();
   $('tr.crm-report-criteria-filter span.crm-absolute-date-to #closing_time_to').parent().hide();
   $('tr.crm-report-criteria-filter span.crm-absolute-date-from label[for="closing_time_from"]').hide();
-  $('tr.crm-report-criteria-filter span.crm-absolute-date-from label[for="closing_time_from_time"]').hide();
+  $('tr.crm-report-criteria-filter span.crm-absolute-date-from label[for="closing_time_from_time"]').text('Closing Time');
   $('tr.crm-report-criteria-filter span.crm-absolute-date-from #closing_time_from').next().hide();
 });
 
