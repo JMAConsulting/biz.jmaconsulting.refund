@@ -23,19 +23,6 @@
  | see the CiviCRM license FAQ at http://civicrm.org/licensing        |
  +--------------------------------------------------------------------+
 *}
-{include file="CRM/Report/Form.tpl"}
-<span class='closing_time_help'>{help id="closing_time"}</span>
-{literal}
-<script type="text/javascript">
-
-CRM.$(function($) {
-  $('tr.crm-report-criteria-filter #s2id_closing_time_relative').hide();
-  $('tr.crm-report-criteria-filter span.crm-absolute-date-to #closing_time_to').parent().hide();
-  $('tr.crm-report-criteria-filter span.crm-absolute-date-from label[for="closing_time_from"]').hide();
-  $('tr.crm-report-criteria-filter span.crm-absolute-date-from label[for="closing_time_from_time"]').text('Closing Time');
-  $('tr.crm-report-criteria-filter span.crm-absolute-date-from #closing_time_from').next().hide();
-  $('tr.crm-report-criteria-filter span.crm-absolute-date-from #closing_time_from').parent().append($('span.closing_time_help'));
-});
-
-</script>
-{/literal}
+{htxt id="closing_time"}
+  <p>{ts}You can indicate that transactions starting at the closing time of business one day should be considered for reporting purposes to occur on the following day.{/ts}</p>
+{/htxt}
