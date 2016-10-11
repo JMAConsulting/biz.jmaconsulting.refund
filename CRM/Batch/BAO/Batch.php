@@ -685,8 +685,19 @@ LEFT JOIN civicrm_contribution_soft ON civicrm_contribution_soft.contribution_id
       'contribution_date_low',
       'contribution_check_number',
       'contribution_status_id',
+      'financial_status_id',
     );
     $values = array();
+    $entityReferenceFields = array(
+      'contribution_status_id',
+      'financial_status_id',
+      'financial_type_id',
+      'contribution_page_id',
+      'payment_instrument_id',
+      'contribution_pcp_made_through_id',
+      'contact_tags',
+      'group',             
+    );
     foreach ($searchFields as $field) {
       if (isset($params[$field])) {
         $values[$field] = $params[$field];
@@ -709,17 +720,20 @@ LEFT JOIN civicrm_contribution_soft ON civicrm_contribution_soft.contribution_id
           $values['contribution_date_low'] = $date['from'];
           $values['contribution_date_high'] = $date['to'];
         }
-        $searchParams = CRM_Contact_BAO_Query::convertFormValues($values);
-        $query = new CRM_Contact_BAO_Query($searchParams,
-          CRM_Contribute_BAO_Query::defaultReturnProperties(CRM_Contact_BAO_Query::MODE_CONTRIBUTE,
-            FALSE
-          ), NULL, FALSE, FALSE, CRM_Contact_BAO_Query::MODE_CONTRIBUTE
+        $searchParams = CRM_Contact_BAO_Query::convertFormValues(
+          $values,
+          0,
+          FALSE,
+          NULL,
+          $entityReferenceFields
         );
-        if ($field == 'contribution_date_high' || $field == 'contribution_date_low') {
-          $query->dateQueryBuilder($params[$field], 'civicrm_contribution', 'contribution_date', 'receive_date', 'Contribution Date');
-        }
       }
     }
+    $query = new CRM_Contact_BAO_Query($searchParams,
+      CRM_Contribute_BAO_Query::defaultReturnProperties(CRM_Contact_BAO_Query::MODE_CONTRIBUTE,
+        FALSE
+      ), NULL, FALSE, FALSE, CRM_Contact_BAO_Query::MODE_CONTRIBUTE
+    );
     if (!empty($query->_where[0])) {
       $where = implode(' AND ', $query->_where[0]) .
         " AND civicrm_entity_batch.batch_id IS NULL
