@@ -149,20 +149,10 @@ CRM.$(function($) {
     });
 
     CRM.$("#crm-transaction-selector-assign-{/literal}{$entityID}{literal} #toggleSelect").click( function() {
-      if (CRM.$("#crm-transaction-selector-assign-{/literal}{$entityID}{literal} #toggleSelect").is(':checked')) {
-        CRM.$("#crm-transaction-selector-assign-{/literal}{$entityID}{literal} input[id^='mark_x_']").prop('checked',true);
-      }
-      else {
-        CRM.$("#crm-transaction-selector-assign-{/literal}{$entityID}{literal} input[id^='mark_x_']").prop('checked',false);
-      }
+      toggleFinancialSelections('#toggleSelect', 'assign');
     });
     CRM.$("#crm-transaction-selector-remove-{/literal}{$entityID}{literal} #toggleSelects").click( function() {
-      if (CRM.$("#crm-transaction-selector-remove-{/literal}{$entityID}{literal} #toggleSelects").is(':checked')) {
-        CRM.$("#crm-transaction-selector-remove-{/literal}{$entityID}{literal} input[id^='mark_y_']").prop('checked',true);
-      }
-      else {
-        CRM.$("#crm-transaction-selector-remove-{/literal}{$entityID}{literal} input[id^='mark_y_']").prop('checked',false);
-      }
+      toggleFinancialSelections('#toggleSelects', 'remove');
     });
   {/literal}{else}{literal}
     buildTransactionSelectorRemove();
@@ -175,6 +165,19 @@ function enableActions( type ) {
   }
   else {
     CRM.$("#trans_remove").prop('disabled',false);
+  }
+}
+
+function toggleFinancialSelections(toggleID, toggleClass) {
+  mark = 'x';
+  if (toggleClass == 'remove') {
+    mark = 'y';
+  }
+  if (CRM.$("#crm-transaction-selector-" + toggleClass + "-{/literal}{$entityID}{literal} " +	toggleID).is(':checked')) {
+    CRM.$("#crm-transaction-selector-" + toggleClass + "-{/literal}{$entityID}{literal} input[id^='mark_" + mark + "_']").prop('checked',true);
+  }
+  else {
+    CRM.$("#crm-transaction-selector-" + toggleClass + "-{/literal}{$entityID}{literal} input[id^='mark_" + mark + "_']").prop('checked',false);
   }
 }
 
@@ -244,12 +247,14 @@ function buildTransactionSelectorAssign(filterSearch) {
     CRM.$.ajax({
       "dataType": 'json',
       "type": "POST",
+      'async': false,
       "url": sSource,
       "data": aoData,
       "success": fnCallback
     });
   }
 });
+toggleFinancialSelections('#toggleSelect', 'assign');
 }
 
 function buildTransactionSelectorRemove( ) {
@@ -301,10 +306,12 @@ function buildTransactionSelectorRemove( ) {
       "type": "POST",
       "url": sSource,
       "data": aoData,
+      'async': false,
       "success": fnCallback
     });
   }
 });
+toggleFinancialSelections('#toggleSelects', 'remove');
 }
 
 function selectAction( id, toggleSelectId, checkId ) {
