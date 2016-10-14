@@ -84,6 +84,36 @@ function refund_civicrm_upgrade($op, CRM_Queue_Queue $queue = NULL) {
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_managed
  */
 function refund_civicrm_managed(&$entities) {
+  $account = civicrm_api3('OptionValue', 'get', array('option_group_id' => 'account_relationship', 'name' => 'Accounts Payable Account is'));
+  if ($account['count'] == 0) {
+    $entities[] = array(
+      'module' => 'biz.jmaconsulting.refund',
+      'name' => 'account',
+      'update' => 'never',
+      'entity' => 'OptionValue',
+      'params' => array(
+        'label' => 'Accounts Payable Account is',
+        'is_active' => 1,
+        'version' => 3,
+        'option_group_id' => 'account_relationship',
+      ),
+    );
+  }
+  $status = civicrm_api3('OptionValue', 'get', array('option_group_id' => 'contribution_status', 'name' => 'Partially refunded'));
+  if ($status['count'] == 0) {
+    $entities[] = array(
+      'module' => 'biz.jmaconsulting.refund',
+      'name' => 'status',
+      'update' => 'never',
+      'entity' => 'OptionValue',
+      'params' => array(
+        'label' => 'Partially refunded',
+        'is_active' => 1,
+        'version' => 3,
+        'option_group_id' => 'contribution_status',
+      ),
+    );
+  }
   _refund_civix_civicrm_managed($entities);
 }
 
