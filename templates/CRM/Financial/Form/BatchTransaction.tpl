@@ -169,7 +169,7 @@ function enableActions( type ) {
 }
 
 function toggleFinancialSelections(toggleID, toggleClass) {
-  mark = 'x';
+  var mark = 'x';
   if (toggleClass == 'remove') {
     mark = 'y';
   }
@@ -247,14 +247,15 @@ function buildTransactionSelectorAssign(filterSearch) {
     CRM.$.ajax({
       "dataType": 'json',
       "type": "POST",
-      'async': false,
       "url": sSource,
       "data": aoData,
-      "success": fnCallback
+      "success": function(b) {
+        fnCallback(b);
+        toggleFinancialSelections('#toggleSelect', 'assign');
+      }
     });
   }
 });
-toggleFinancialSelections('#toggleSelect', 'assign');
 }
 
 function buildTransactionSelectorRemove( ) {
@@ -306,12 +307,13 @@ function buildTransactionSelectorRemove( ) {
       "type": "POST",
       "url": sSource,
       "data": aoData,
-      'async': false,
-      "success": fnCallback
+      "success": function(b) {
+        fnCallback(b);
+        toggleFinancialSelections('#toggleSelects', 'remove');
+      }
     });
   }
 });
-toggleFinancialSelections('#toggleSelects', 'remove');
 }
 
 function selectAction( id, toggleSelectId, checkId ) {
