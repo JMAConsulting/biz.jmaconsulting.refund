@@ -5011,16 +5011,12 @@ LIMIT 1;";
    * @param array $contributionStatusId
    *
    */
-  public static function addPayments($lineItems, $contributions, $contributionStatusId = NULL) {
+  public static function addPayments($contributions, $contributionStatusId = NULL) {
     // get financial trxn which is a payment
     $ftSql = "SELECT ft.id, ft.total_amount
       FROM civicrm_financial_trxn ft
       INNER JOIN civicrm_entity_financial_trxn eft ON eft.financial_trxn_id = ft.id AND eft.entity_table = 'civicrm_contribution'
       WHERE eft.entity_id = %1 AND ft.is_payment = 1 ORDER BY ft.id DESC LIMIT 1";
-    $sql = "SELECT fi.id, li.price_field_value_id
-      FROM civicrm_financial_item fi
-      INNER JOIN civicrm_line_item li ON li.id = fi.entity_id
-      WHERE li.contribution_id = %1";
     $contributionStatus = CRM_Core_PseudoConstant::get('CRM_Contribute_DAO_Contribution', 'contribution_status_id', array(
       'labelColumn' => 'name',
     ));
@@ -5032,30 +5028,13 @@ LIMIT 1;";
       }
       $ftDao = CRM_Core_DAO::executeQuery($ftSql, array(1 => array($contribution->id, 'Integer')));
       $ftDao->fetch();
-      $trxnAmount = $ftDao->total_amount;
-      $ftId = $ftDao->id;
 
-      // get financial item
-      $dao = CRM_Core_DAO::executeQuery($sql, array(1 => array($contribution->id, 'Integer')));
-      while ($dao->fetch()) {
-        $ftIds[$dao->price_field_value_id] = $dao->id;
-      }
-
-      $params = array(
-        'entity_table' => 'civicrm_financial_item',
-        'financial_trxn_id' => $ftId,
+      // store financial item Proportionaly.
+      $trxnParams = array(
+        'total_amount' => $ftDao->total_amount,
+        'contribution_id' => $contribution->id,
       );
-      foreach ($lineItems as $key => $value) {
-        if ($value['qty'] == 0) {
-          continue;
-        }
-        $paid = $value['line_total'] * ($trxnAmount / $contribution->total_amount);
-        // Record Entity Financial Trxn
-        $params['amount'] = round($paid, 2);
-        $params['entity_id'] = $ftIds[$value['price_field_value_id']];
-
-        civicrm_api3('EntityFinancialTrxn', 'create', $params);
-      }
+      self::assignProportionalLineItems($trxnParams, $ftDao->id, $contribution->total_amount);
     }
   }
 
@@ -5063,36 +5042,57 @@ LIMIT 1;";
    * Function use to store line item proportionaly in
    * in entity financial trxn table
    *
-   * @param array $params
-   *  array of contribution params.
-   * @param object $trxn
-   *  CRM_Financial_DAO_FinancialTrxn object
-   * @param array $contribution
+   * @param array $trxnParams
+   *
+   * @param Integer $trxnId
+   *
+   * @param float $contributionTotalAmount
    *
    */
-  public static function assignProportionalLineItems($params, $trxn, $contribution) {
-    $lineItems = CRM_Price_BAO_LineItem::getLineItemsByContributionID($params['contribution_id']);
+  public static function assignProportionalLineItems($trxnParams, $trxnId, $contributionTotalAmount) {
+    $lineItems = CRM_Price_BAO_LineItem::getLineItemsByContributionID($trxnParams['contribution_id']);
     if (!empty($lineItems)) {
       // get financial item
-      $sql = "SELECT fi.id, li.price_field_value_id
+      $sql = "SELECT fi.id, li.price_field_value_id, li.tax_amount
       FROM civicrm_financial_item fi
       INNER JOIN civicrm_line_item li ON li.id = fi.entity_id and fi.entity_table = 'civicrm_line_item'
       WHERE li.contribution_id = %1";
-      $dao = CRM_Core_DAO::executeQuery($sql, array(1 => array($params['contribution_id'], 'Integer')));
+      $dao = CRM_Core_DAO::executeQuery($sql, array(1 => array($trxnParams['contribution_id'], 'Integer')));
+      $ftIds = $taxItems = array();
+      $salesTaxFinancialAccount = self::getSalesTaxFinancialAccounts();
       while ($dao->fetch()) {
-        $ftIds[$dao->price_field_value_id] = $dao->id;
+        /* if sales tax item*/
+        if (in_array($dao->financial_account_id, $salesTaxFinancialAccount)) {
+          $taxItems[$dao->price_field_value_id] = array(
+            'financial_item_id' => $dao->id,
+            'amount' => $dao->tax_amount,
+          );
+        }
+        else {
+          $ftIds[$dao->price_field_value_id] = $dao->id;
+        }
       }
       $eftParams = array(
         'entity_table' => 'civicrm_financial_item',
-        'financial_trxn_id' => $trxn->id,
+        'financial_trxn_id' => $trxnId,
       );
       foreach ($lineItems as $key => $value) {
-        $paid = $value['line_total'] * ($params['total_amount'] / $contribution['total_amount']);
+        if ($value['qty'] == 0) {
+          continue;
+        }
+        $paid = $value['line_total'] * ($trxnParams['total_amount'] / $contributionTotalAmount);
         // Record Entity Financial Trxn
         $eftParams['amount'] = round($paid, 2);
         $eftParams['entity_id'] = $ftIds[$value['price_field_value_id']];
 
         civicrm_api3('EntityFinancialTrxn', 'create', $eftParams);
+        if (array_key_exists($value['price_field_value_id'], $taxItems)) {
+          $taxPaid = $taxItems['amount'] * ($trxnParams['total_amount'] / $contributionTotalAmount);
+          // Record Entity Financial Trxn
+          $eftParams['amount'] = round($taxPaid, 2);
+          $eftParams['entity_id'] = $taxItems[$value['price_field_value_id']]['financial_item_id'];
+          civicrm_api3('EntityFinancialTrxn', 'create', $eftParams);
+        }
       }
     }
   }
@@ -5412,6 +5412,27 @@ LEFT JOIN  civicrm_contribution on (civicrm_contribution.contact_id = civicrm_co
       throw new CRM_Core_Exception($error);
     }
     return $isError;
+  }
+
+  /**
+   * Retrieve Sales Tax Financial Accounts.
+   *
+   *
+   * @return array of Sales Tax Financial Account
+   *
+   */
+  public static function getSalesTaxFinancialAccounts() {
+    $query = "SELECT cfa.id FROM civicrm_entity_financial_account ce
+INNER JOIN civicrm_financial_account cfa ON ce.financial_account_id = cfa.id
+WHERE `entity_table` = 'civicrm_financial_type' AND cfa.is_tax = 1 AND ce.account_relationship = %1 GROUP BY cfa.id";
+    $accountRel = key(CRM_Core_PseudoConstant::accountOptionValues('account_relationship', NULL, " AND v.name LIKE 'Sales Tax Account is' "));
+    $queryParams = array(1 => array($accountRel, 'Integer'));
+    $dao = CRM_Core_DAO::executeQuery($query, $queryParams);
+    $financialAccount = array();
+    while ($dao->fetch()) {
+      $financialAccount[$dao->id] = $dao->id;
+    }
+    return $financialAccount;
   }
 
 }
