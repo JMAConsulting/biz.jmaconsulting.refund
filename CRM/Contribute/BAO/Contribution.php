@@ -4049,10 +4049,15 @@ WHERE eft.financial_trxn_id IN ({$trxnId}, {$baseTrxnId['financialTrxnId']})
             if (isset($refundStatus)) {
               $addFinancialEntry['status_id'] = $refundStatus;
             }
-            $trxnIds['id'] = $financialTrxn->id;
-            CRM_Financial_BAO_FinancialItem::create($addFinancialEntry, NULL, $trxnIds);
+            CRM_Financial_BAO_FinancialItem::create($addFinancialEntry);
           }
         }
+        // store financial item Proportionaly.
+        $trxnParams = array(
+          'total_amount' => $financialTrxn->total_amount,
+          'contribution_id' => $contributionDAO->id,
+        );
+        self::assignProportionalLineItems($trxnParams, $financialTrxn->id, $contributionDAO->total_amount);
       }
       if ($participantId) {
         // update participant status
@@ -5089,7 +5094,7 @@ LIMIT 1;";
     $lineItems = CRM_Price_BAO_LineItem::getLineItemsByContributionID($trxnParams['contribution_id']);
     if (!empty($lineItems)) {
       // get financial item
-      $sql = "SELECT fi.id, li.price_field_value_id, li.tax_amount
+      $sql = "SELECT fi.id, li.price_field_value_id, li.tax_amount, fi.financial_account_id
       FROM civicrm_financial_item fi
       INNER JOIN civicrm_line_item li ON li.id = fi.entity_id and fi.entity_table = 'civicrm_line_item'
       WHERE li.contribution_id = %1";
@@ -5123,7 +5128,7 @@ LIMIT 1;";
 
         civicrm_api3('EntityFinancialTrxn', 'create', $eftParams);
         if (array_key_exists($value['price_field_value_id'], $taxItems)) {
-          $taxPaid = $taxItems['amount'] * ($trxnParams['total_amount'] / $contributionTotalAmount);
+          $taxPaid = $taxItems[$value['price_field_value_id']]['amount'] * ($trxnParams['total_amount'] / $contributionTotalAmount);
           // Record Entity Financial Trxn
           $eftParams['amount'] = round($taxPaid, 2);
           $eftParams['entity_id'] = $taxItems[$value['price_field_value_id']]['financial_item_id'];
