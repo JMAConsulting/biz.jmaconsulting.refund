@@ -805,7 +805,7 @@ WHERE  id = %1";
           $optionValueId = key($field['options']);
 
           if (CRM_Utils_Array::value('name', $field['options'][$optionValueId]) == 'contribution_amount') {
-            $taxRates = CRM_Core_PseudoConstant::getTaxRates();
+           $taxRates = CRM_Core_PseudoConstant::getTaxRates();
             if (array_key_exists($params['financial_type_id'], $taxRates)) {
               $field['options'][key($field['options'])]['tax_rate'] = $taxRates[$params['financial_type_id']];
               $taxAmount = CRM_Contribute_BAO_Contribution_Utils::calculateTaxAmount($field['options'][$optionValueId]['amount'], $field['options'][$optionValueId]['tax_rate']);
@@ -851,7 +851,8 @@ WHERE  id = %1";
 
           CRM_Price_BAO_LineItem::format($id, $params, $field, $lineItem);
           if (CRM_Utils_Array::value('tax_rate', $field['options'][$optionValueId])) {
-            $lineItem = self::setLineItem($field, $lineItem, $optionValueId, $totalTax);
+            $lineItem = self::setLineItem($field, $lineItem, $optionValueId);
+            $totalTax += $field['options'][$optionValueId]['tax_amount'];
           }
           $totalPrice += $lineItem[$optionValueId]['line_total'] + CRM_Utils_Array::value('tax_amount', $lineItem[$optionValueId]);
           if (
@@ -1010,7 +1011,7 @@ WHERE  id = %1";
   public static function getCachedPriceSetDetail($priceSetID) {
     $cacheKey = __CLASS__ . __FUNCTION__ . '_' . $priceSetID;
     $cache = CRM_Utils_Cache::singleton();
-    $values = $cache->get($cacheKey);
+    $values = (array) $cache->get($cacheKey);
     if (empty($values)) {
       $data = self::getSetDetail($priceSetID);
       $values = $data[$priceSetID];
@@ -1724,31 +1725,11 @@ WHERE       ps.id = %1
     $priceSetParams = array();
     foreach ($params as $field => $value) {
       $parts = explode('_', $field);
-      if (count($parts) == 2 && $parts[0] == 'price' && is_numeric($parts[1]) && is_array($value)) {
+      if (count($parts) == 2 && $parts[0] == 'price' && is_numeric($parts[1])) {
         $priceSetParams[$field] = $value;
       }
     }
     return $priceSetParams;
-  }
-
-  /**
-   * Get non-deductible amount from price options
-   *
-   * @param int $priceSetId
-   * @param array $lineItem
-   *
-   * @return int
-   *   calculated non-deductible amount.
-   */
-  public static function getNonDeductibleAmountFromPriceSet($priceSetId, $lineItem) {
-    $nonDeductibleAmount = 0;
-    if (!empty($lineItem[$priceSetId])) {
-      foreach ($lineItem[$priceSetId] as $fieldId => $options) {
-        $nonDeductibleAmount += $options['non_deductible_amount'] * $options['qty'];
-      }
-    }
-
-    return $nonDeductibleAmount;
   }
 
 }
