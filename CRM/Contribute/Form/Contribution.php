@@ -361,7 +361,7 @@ class CRM_Contribute_Form_Contribution extends CRM_Contribute_Form_AbstractEditP
 
     // Fix the display of the monetary value, CRM-4038.
     if (isset($defaults['total_amount'])) {
-      if (!empty($defaults['tax_amount'])) {
+      if (!empty($defaults['tax_amount']) && !($this->_action & CRM_Core_Action::REVERT)) {
         $componentDetails = CRM_Contribute_BAO_Contribution::getComponentDetails($this->_id);
         if (!(CRM_Utils_Array::value('membership', $componentDetails) || CRM_Utils_Array::value('participant', $componentDetails))) {
           $defaults['total_amount'] = CRM_Utils_Money::format($defaults['total_amount'] - $defaults['tax_amount'], NULL, '%a');
@@ -381,7 +381,12 @@ class CRM_Contribute_Form_Contribution extends CRM_Contribute_Form_AbstractEditP
     }
 
     if (isset($defaults['net_amount'])) {
-      $defaults['net_amount'] = CRM_Utils_Money::format($defaults['net_amount'] - $defaults['tax_amount'], NULL, '%a');
+      if (CRM_Utils_Array::value('tax_amount', $params)) {
+        $defaults['net_amount'] = CRM_Utils_Money::format($defaults['net_amount'] - $defaults['tax_amount'], NULL, '%a');
+      }
+      else {
+        $defaults['net_amount'] = CRM_Utils_Money::format($defaults['net_amount'], NULL, '%a');
+      }
     }
 
     if ($this->_contributionType) {

@@ -4052,12 +4052,14 @@ WHERE eft.financial_trxn_id IN ({$trxnId}, {$baseTrxnId['financialTrxnId']})
             CRM_Financial_BAO_FinancialItem::create($addFinancialEntry);
           }
         }
-        // store financial item Proportionaly.
-        $trxnParams = array(
-          'total_amount' => $financialTrxn->total_amount,
-          'contribution_id' => $contributionDAO->id,
-        );
-        self::assignProportionalLineItems($trxnParams, $financialTrxn->id, $contributionDAO->total_amount);
+        if ($trxnsData['status_id'] != CRM_Core_OptionGroup::getValue('contribution_status', 'Refunded', 'name')) {
+          // store financial item Proportionaly.
+          $trxnParams = array(
+            'total_amount' => $financialTrxn->total_amount,
+            'contribution_id' => $contributionDAO->id,
+          );
+          self::assignProportionalLineItems($trxnParams, $financialTrxn->id, $contributionDAO->total_amount);
+        }
       }
       if ($participantId) {
         // update participant status
