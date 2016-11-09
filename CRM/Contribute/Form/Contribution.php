@@ -381,7 +381,7 @@ class CRM_Contribute_Form_Contribution extends CRM_Contribute_Form_AbstractEditP
     }
 
     if (isset($defaults['net_amount'])) {
-      if (CRM_Utils_Array::value('tax_amount', $params)) {
+      if (CRM_Utils_Array::value('tax_amount', $defaults) && !($this->_action & CRM_Core_Action::REVERT)) {
         $defaults['net_amount'] = CRM_Utils_Money::format($defaults['net_amount'] - $defaults['tax_amount'], NULL, '%a');
       }
       else {
